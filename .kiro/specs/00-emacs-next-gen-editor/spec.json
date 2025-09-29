@@ -1,0 +1,22 @@
+{
+  "feature_name": "emacs-next-gen-editor",
+  "created_at": "20250928145621",
+  "updated_at": "20250929130000",
+  "language": "ja",
+  "phase": "implementation",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}

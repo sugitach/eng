@@ -49,7 +49,8 @@ Note: Optional for new features or small additions. You can proceed directly to 
 
 ## Active Specifications
 <!-- Added by /kiro:spec-init command -->
-- `emacs-next-gen-editor`: emacsユーザーのための次世代エディタ開発
+- `00-emacs-next-gen-editor`: emacsユーザーのための次世代エディタ開発
+- `01-process-rpc`: emacs-next-gen-editor のためのプロセス間通信(RPC)を実装します
 
 ## Steering Configuration
 

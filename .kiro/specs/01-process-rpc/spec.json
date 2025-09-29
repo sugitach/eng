@@ -1,0 +1,25 @@
+{
+  "feature_name": "E01-ProcessRPC",
+  "parent_spec": "emacs-next-gen-editor",
+  "description": "Rustプロジェクトの基盤を構築し、独立したUIプロセスとコアプロセス間での基本的なRPC通信路を確立する。",
+  "created_at": "20250928180000",
+  "updated_at": "20250929150000"
+  "language": "ja",
+"phase": "implementation",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": false
+    }
+  },
+  "ready_for_implementation": true,
+  "updated_at": "20250929130000"
+}
