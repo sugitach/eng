@@ -12,6 +12,7 @@ rand = "0.8"
 tokio-stream = "0.1"
 futures-util = "0.3"
 iced = { version = "0.12", features = ["tokio"] }
+clap = { version = "4.4", features = ["derive"] }
 
 [build-dependencies]
 tonic-build = "0.11"

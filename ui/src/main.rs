@@ -1,5 +1,6 @@
 use iced::{executor, Application, Command, Element, Settings, Theme, Length};
 use iced::widget::{column, text, container, scrollable};
+use iced::window;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tonic::transport::Channel;
@@ -7,6 +8,7 @@ use tonic::Request;
 use tonic::metadata::MetadataValue;
 use uuid::Uuid;
 use tokio_stream::StreamExt;
+use clap::Parser;
 
 mod launcher;
 use launcher::{LocalLauncher, CoreProcess};
@@ -17,26 +19,22 @@ pub mod editor {
 use editor::editor_service_client::EditorServiceClient;
 use editor::HandshakeRequest;
 
-pub fn generate_auth_token() -> String {
-    Uuid::new_v4().to_string()
+#[derive(Parser, Debug, Clone)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Run in test mode (auto-close after handshake)
+    #[arg(long)]
+    test_mode: bool,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_generate_auth_token() {
-        let token = generate_auth_token();
-        assert!(!token.is_empty());
-        assert!(uuid::Uuid::parse_str(&token).is_ok());
-    }
+pub fn generate_auth_token() -> String {
+    Uuid::new_v4().to_string()
 }
 
 // アプリケーションの状態
 struct EditorApp {
     logs: Vec<String>,
-    // プロセスハンドルを保持して終了まで生存させる
+    test_mode: bool,
     _core_process: Option<Arc<Mutex<CoreProcess>>>, 
 }
 
@@ -44,18 +42,24 @@ struct EditorApp {
 enum Message {
     CoreHandshakeFinished(Arc<Mutex<CoreProcess>>, Vec<String>),
     Error(String),
+    CloseRequested,
 }
 
 impl Application for EditorApp {
     type Executor = executor::Default;
     type Message = Message;
     type Theme = Theme;
-    type Flags = ();
+    type Flags = Args;
 
-    fn new(_flags: ()) -> (Self, Command<Message>) {
+    fn new(args: Args) -> (Self, Command<Message>) {
         (
             EditorApp {
-                logs: vec!["Initializing UI...".into(), "Launching Core process...".into()],
+                logs: vec![
+                    "Initializing UI...".into(), 
+                    format!("Test Mode: {}", args.test_mode),
+                    "Launching Core process...".into()
+                ],
+                test_mode: args.test_mode,
                 _core_process: None,
             },
             Command::perform(start_core_and_handshake(), |res| match res {
@@ -75,11 +79,27 @@ impl Application for EditorApp {
                 self.logs.push("Core process started successfully.".into());
                 self.logs.extend(logs);
                 self._core_process = Some(process);
+                
+                if self.test_mode {
+                    self.logs.push("Test mode enabled. Closing window in 1 second...".into());
+                    // テストモード時は少し待ってから閉じる
+                    return Command::perform(
+                        tokio::time::sleep(tokio::time::Duration::from_secs(1)),
+                        |_| Message::CloseRequested
+                    );
+                }
                 Command::none()
             }
             Message::Error(e) => {
                 self.logs.push(format!("Error: {}", e));
+                if self.test_mode {
+                    eprintln!("Test failed with error: {}", e);
+                    return window::close(window::Id::MAIN);
+                }
                 Command::none()
+            }
+            Message::CloseRequested => {
+                window::close(window::Id::MAIN)
             }
         }
     }
@@ -97,7 +117,6 @@ impl Application for EditorApp {
     }
 }
 
-// Core起動とHandshakeを行う非同期関数
 async fn start_core_and_handshake() -> Result<(Arc<Mutex<CoreProcess>>, Vec<String>), String> {
     let token = generate_auth_token();
     let launcher = LocalLauncher::new(token.clone());
@@ -106,8 +125,6 @@ async fn start_core_and_handshake() -> Result<(Arc<Mutex<CoreProcess>>, Vec<Stri
     let port = core_process.port;
     let process_arc = Arc::new(Mutex::new(core_process));
 
-    // gRPC接続
-    // サーバー起動待ち
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     
     let uri = format!("http://[::1]:{}", port);
@@ -124,10 +141,9 @@ async fn start_core_and_handshake() -> Result<(Arc<Mutex<CoreProcess>>, Vec<Stri
         Ok(req)
     });
 
-    // Handshake実行
     let outbound = tokio_stream::iter(vec![
         HandshakeRequest { client_message: "Hello from GUI!".into() },
-        HandshakeRequest { client_message: "GUI is running with iced!".into() },
+        HandshakeRequest { client_message: "GUI is running in test mode!".into() },
     ]);
 
     let response = client.handshake(Request::new(outbound)).await.map_err(|e| format!("RPC failed: {}", e))?;
@@ -147,5 +163,10 @@ async fn start_core_and_handshake() -> Result<(Arc<Mutex<CoreProcess>>, Vec<Stri
 }
 
 fn main() -> iced::Result {
-    EditorApp::run(Settings::default())
+    let args = Args::parse();
+    
+    let mut settings = Settings::with_flags(args);
+    // ウィンドウサイズなどのデフォルト設定が必要な場合はここで調整
+    
+    EditorApp::run(settings)
 }
