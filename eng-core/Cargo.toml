@@ -1,0 +1,16 @@
+[package]
+name = "eng-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tonic = { version = "0.11", features = ["codegen", "transport", "prost"] }
+prost = "0.12"
+tokio = { version = "1.36", features = ["full"] }
+uuid = { version = "1.7", features = ["v4", "fast-rng"] }
+rand = "0.8"
+tokio-stream = { version = "0.1", features = ["net"] }
+futures-util = "0.3"
+
+[build-dependencies]
+tonic-build = "0.11"

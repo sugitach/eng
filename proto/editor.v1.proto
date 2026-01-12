@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package editor.v1;
+
+// UI-コア間のRPCサービス
+service EditorService {
+  // 挨拶と基本情報交換のための双方向ストリーミングRPC
+  rpc Handshake(stream HandshakeRequest) returns (stream HandshakeResponse);
+}
+
+// UIからコアへのメッセージ
+message HandshakeRequest {
+  string client_message = 1; // 例: "Hello, Core! from UI-PID-12345"
+}
+
+// コアからUIへのメッセージ
+message HandshakeResponse {
+  string server_message = 1; // 例: "Hello, UI! from Core-PID-54321"
+}

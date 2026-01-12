@@ -11,6 +11,14 @@
 
 ## 2. Technology Stack
 
+## 2.1. Implementation Policy
+
+**実装方針**:
+タスクの実装は最小限の単位でテスト実装〜テスト実行(失敗)〜本体実装〜テスト実行(成功)を繰り返す。
+この場合の「最小限の単位」とは、「たかだか1箇所の変更」や「関数1つの実装」でテストを通すことができる最少単位を指す。
+例えば、main 関数を作るのなら、空実装をまず作ってテストを実行してから内部を1箇所づつテストと一緒に追加していくことを繰り返す。
+**実装タスクには、関連するテストが成功することを確認することを含む。**
+
 - **RPC Framework**: [Tonic](https://github.com/hyperium/tonic)
   - **理由**: RustにおけるデファクトスタンダードのgRPC実装。パフォーマンス、信頼性、エコシステムの成熟度が高い。
 - **Schema Definition**: [Protocol Buffers (Protobuf v3)](https://protobuf.dev/)

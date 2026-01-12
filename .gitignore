@@ -1,1 +1,4 @@
 /target
+ui_output.log
+ui_debug.log
+tmp/
