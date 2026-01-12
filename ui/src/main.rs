@@ -82,7 +82,6 @@ impl Application for EditorApp {
                 
                 if self.test_mode {
                     self.logs.push("Test mode enabled. Closing window in 1 second...".into());
-                    // テストモード時は少し待ってから閉じる
                     return Command::perform(
                         tokio::time::sleep(tokio::time::Duration::from_secs(1)),
                         |_| Message::CloseRequested
@@ -94,7 +93,7 @@ impl Application for EditorApp {
                 self.logs.push(format!("Error: {}", e));
                 if self.test_mode {
                     eprintln!("Test failed with error: {}", e);
-                    return window::close(window::Id::MAIN);
+                    std::process::exit(1);
                 }
                 Command::none()
             }
@@ -165,8 +164,7 @@ async fn start_core_and_handshake() -> Result<(Arc<Mutex<CoreProcess>>, Vec<Stri
 fn main() -> iced::Result {
     let args = Args::parse();
     
-    let mut settings = Settings::with_flags(args);
-    // ウィンドウサイズなどのデフォルト設定が必要な場合はここで調整
+    let settings = Settings::with_flags(args);
     
     EditorApp::run(settings)
 }
