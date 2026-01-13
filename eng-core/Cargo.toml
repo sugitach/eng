@@ -11,6 +11,7 @@ uuid = { version = "1.7", features = ["v4", "fast-rng"] }
 rand = "0.8"
 tokio-stream = { version = "0.1", features = ["net"] }
 futures-util = "0.3"
+ropey = "1.6"
 
 [build-dependencies]
 tonic-build = "0.11"
