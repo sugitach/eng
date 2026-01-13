@@ -1,0 +1,10 @@
+{
+  "id": "03-buffer-impl-core",
+  "title": "Coreプロセスにおけるバッファ実装",
+  "description": "ropeyクレートを用いたバッファデータ構造の実装と、基本的な編集操作（挿入・削除）のロジック構築。",
+  "status": "pending",
+  "dependencies": ["02-buffer-design"],
+  "phases": [
+    { "name": "実装", "status": "pending" }
+  ]
+}
