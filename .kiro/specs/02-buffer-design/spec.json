@@ -1,0 +1,17 @@
+{
+  "id": "02-buffer-design",
+  "title": "バッファ管理手法の調査と設計",
+  "description": "分散アーキテクチャに適したバッファ管理（データ構造と同期手法）の調査と設計を行う。",
+  "status": "in-progress",
+  "dependencies": ["01-process-rpc"],
+  "phases": [
+    {
+      "name": "調査",
+      "status": "pending"
+    },
+    {
+      "name": "設計",
+      "status": "pending"
+    }
+  ]
+}
