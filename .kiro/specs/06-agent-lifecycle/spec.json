@@ -1,0 +1,10 @@
+{
+  "id": "06-agent-lifecycle",
+  "title": "AgentのライフサイクルとDaemonモード",
+  "description": "Agentの起動モード（通常/Daemon）、複数起動時の連携、および終了時のリソース（Core/UI）クリーンアップを実装する。",
+  "status": "pending",
+  "dependencies": ["05-agent-setup"],
+  "phases": [
+    { "name": "実装", "status": "pending" }
+  ]
+}

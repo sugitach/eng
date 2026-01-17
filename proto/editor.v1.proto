@@ -8,6 +8,18 @@ service EditorService {
   rpc Handshake(stream HandshakeRequest) returns (stream HandshakeResponse);
 }
 
+// Agent制御用サービス
+service AgentService {
+  // 新しいUIウィンドウを起動する
+  rpc SpawnUi(SpawnUiRequest) returns (SpawnUiResponse);
+}
+
+message SpawnUiRequest {}
+
+message SpawnUiResponse {
+  bool success = 1;
+}
+
 // UIからコアへのメッセージ
 message HandshakeRequest {
   string client_message = 1; // 例: "Hello, Core! from UI-PID-12345"
