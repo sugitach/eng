@@ -1,0 +1,11 @@
+{
+  "id": "05-agent-setup",
+  "title": "Agentプロセスの新設とライフサイクル管理",
+  "description": "システムのエントリーポイントとなるeng-agentクレートを新設し、UIとCoreプロセスの起動・管理を担当させる。",
+  "status": "in-progress",
+  "dependencies": ["01-process-rpc", "04-buffer-properties"],
+  "phases": [
+    { "name": "新設", "status": "pending" },
+    { "name": "移行", "status": "pending" }
+  ]
+}
