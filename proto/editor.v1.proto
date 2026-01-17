@@ -12,12 +12,84 @@ service EditorService {
 service AgentService {
   // 新しいUIウィンドウを起動する
   rpc SpawnUi(SpawnUiRequest) returns (SpawnUiResponse);
+  
+  // UIの状態を同期する（双方向ストリーミング）
+  rpc ConnectUi(stream UiRequest) returns (stream UiEvent);
 }
 
 message SpawnUiRequest {}
-
 message SpawnUiResponse {
   bool success = 1;
+}
+
+// UIからAgentへのリクエスト
+message UiRequest {
+  oneof request {
+    HandshakeRequest handshake = 1;
+    // キー入力、リサイズなどのイベントを今後追加
+  }
+}
+
+// AgentからUIへの通知（描画命令）
+message UiEvent {
+  oneof event {
+    UpdateLayout update_layout = 1;
+    UpdateView update_view = 2;
+  }
+}
+
+message UpdateLayout {
+  ViewNode root = 1;
+}
+
+message UpdateView {
+  string view_id = 1;
+  string buffer_id = 2;
+  string text = 3;
+  repeated StyleSpan styles = 4;
+}
+
+// 画面分割構造
+message ViewNode {
+  oneof node {
+    Leaf leaf = 1;
+    Parent parent = 2;
+  }
+}
+
+message Leaf {
+  string id = 1;
+  optional string buffer_id = 2;
+}
+
+message Parent {
+  enum Direction {
+    HORIZONTAL = 0;
+    VERTICAL = 1;
+  }
+  Direction direction = 1;
+  repeated ViewNode children = 2;
+  repeated LayoutSize sizes = 3;
+}
+
+message LayoutSize {
+  oneof size {
+    uint32 fixed = 1;
+    bool stretch = 2;
+  }
+}
+
+// テキスト装飾
+message Style {
+  uint32 color = 1;
+  bool bold = 2;
+  bool italic = 3;
+}
+
+message StyleSpan {
+  uint32 start = 1; // 文字単位のオフセット
+  uint32 end = 2;
+  Style style = 3;
 }
 
 // UIからコアへのメッセージ

@@ -18,7 +18,7 @@ use clap::Parser;
 use eng_core::editor::editor_service_server::{EditorService, EditorServiceServer};
 use eng_core::editor::agent_service_server::{AgentService, AgentServiceServer};
 use eng_core::editor::agent_service_client::AgentServiceClient;
-use eng_core::editor::{HandshakeRequest, HandshakeResponse, SpawnUiRequest, SpawnUiResponse};
+use eng_core::editor::{HandshakeRequest, HandshakeResponse, SpawnUiRequest, SpawnUiResponse, UiRequest, UiEvent};
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about)]
@@ -84,12 +84,24 @@ struct MyAgentServiceImpl {
 
 #[tonic::async_trait]
 impl AgentService for MyAgentServiceImpl {
+    type ConnectUiStream = Pin<Box<dyn Stream<Item = Result<UiEvent, Status>> + Send + Sync + 'static>>;
+
     async fn spawn_ui(&self, _request: Request<SpawnUiRequest>) -> Result<Response<SpawnUiResponse>, Status> {
         eprintln!("Agent: Received SpawnUi request.");
         match Launcher::launch_ui(self.state.agent_port, &self.state.agent_token, self.state.test_mode).await {
             Ok(_) => Ok(Response::new(SpawnUiResponse { success: true })),
             Err(e) => Err(Status::internal(format!("Failed to launch UI: {}", e))),
         }
+    }
+
+    async fn connect_ui(
+        &self,
+        _request: Request<tonic::Streaming<UiRequest>>,
+    ) -> Result<Response<Self::ConnectUiStream>, Status> {
+        eprintln!("Agent: UI connected via ConnectUi stream.");
+        // TODO: ここでUIイベントのストリームを返す
+        let output = tokio_stream::iter(vec![]);
+        Ok(Response::new(Box::pin(output)))
     }
 }
 
@@ -113,8 +125,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 1. 既存Agentの確認と委譲
     if let Some(info) = load_runtime_info() {
-        // ポートファイルがある場合、接続を試みる
-        // 接続できれば委譲して終了。できなければ（ゾンビファイルなら）クリーンアップして続行。
         eprintln!("Agent: Found port file (port: {}). Connecting...", info.port);
         match try_delegate_to_existing_agent(info.port, info.token).await {
             Ok(_) => {
@@ -172,16 +182,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("Agent: Session active.");
 
     if args.daemon {
-        // Daemonモード: Ctrl+C を待つのみ
-        // (UIが終了してもAgentは終了しない)
         tokio::select! {
             res = server_future => eprintln!("Agent: Server error: {:?}", res),
             _ = tokio::signal::ctrl_c() => eprintln!("Agent: Received Ctrl+C."),
         }
     } else {
-        // 通常モード: UI終了またはCtrl+Cで終了
-        // ※ 複数UIに対応するなら、UIプロセスリストを管理して「0になったら終了」にする必要があるが、
-        // 今回は「最初のUI」が閉じたら終了という簡易仕様で進める。
         tokio::select! {
             res = server_future => eprintln!("Agent: Server error: {:?}", res),
             _ = tokio::signal::ctrl_c() => eprintln!("Agent: Received Ctrl+C."),

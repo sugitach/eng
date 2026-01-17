@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::path::PathBuf;
 use tokio::sync::RwLock;
 use uuid::Uuid;
+use crate::style::StyleMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Encoding {
@@ -27,6 +28,7 @@ pub struct Buffer {
     pub read_only: bool,
     pub encoding: Encoding,
     pub line_ending: LineEnding,
+    pub styles: StyleMap,
 }
 
 impl Buffer {
@@ -40,6 +42,7 @@ impl Buffer {
             read_only: false,
             encoding: Encoding::Utf8,
             line_ending: LineEnding::Lf,
+            styles: StyleMap::new(),
         }
     }
 
@@ -51,7 +54,9 @@ impl Buffer {
         if char_idx > char_len {
              return Err(format!("Index out of bounds: {} > {}", char_idx, char_len));
         }
+        let insert_len = text.chars().count();
         self.text.insert(char_idx, text);
+        self.styles.on_insert(char_idx, insert_len);
         self.version += 1;
         self.modified = true;
         Ok(())
@@ -65,14 +70,14 @@ impl Buffer {
          if range.end > char_len || range.start > range.end {
              return Err(format!("Invalid range: {:?} (len: {})", range, char_len));
          }
-         self.text.remove(range);
+         self.text.remove(range.clone());
+         self.styles.on_delete(range);
          self.version += 1;
          self.modified = true;
          Ok(())
     }
 
     pub fn set_path(&mut self, path: PathBuf) {
-        // パスが設定されたら、名前もファイル名に更新するのが一般的
         if let Some(file_name) = path.file_name() {
             if let Some(name_str) = file_name.to_str() {
                 self.name = name_str.to_string();
@@ -131,6 +136,17 @@ impl EditorState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::Style;
+
+    #[test]
+    fn test_buffer_styles_sync() {
+        let mut buf = Buffer::new("test".into(), "Hello");
+        buf.styles.add_span(0..5, Style { color: 0, bold: true, italic: false });
+        
+        // 先頭に挿入
+        buf.insert(0, ">").unwrap();
+        assert_eq!(buf.styles.get_spans()[0].range, 1..6);
+    }
 
     #[test]
     fn test_buffer_properties() {

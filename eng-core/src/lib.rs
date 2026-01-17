@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod buffer;
+pub mod style;
 
 // 自動生成されたコードをインポート
 pub mod editor {

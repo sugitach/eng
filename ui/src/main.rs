@@ -1,5 +1,5 @@
 use iced::{executor, Application, Command, Element, Settings, Theme, Length};
-use iced::widget::{column, text, container, scrollable};
+use iced::widget::{column, text, container};
 use iced::window;
 use tonic::transport::Channel;
 use tonic::Request;
@@ -12,6 +12,9 @@ pub mod editor {
 }
 use editor::editor_service_client::EditorServiceClient;
 use editor::HandshakeRequest;
+use crate::editor::{ViewNode, Leaf, Parent, view_node::Node};
+
+mod view_tree;
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -33,6 +36,7 @@ struct Args {
 struct EditorApp {
     logs: Vec<String>,
     test_mode: bool,
+    layout: Option<ViewNode>,
 }
 
 #[derive(Debug, Clone)]
@@ -62,10 +66,33 @@ impl Application for EditorApp {
             Command::none()
         };
 
+        // 開発用モックレイアウト: 左右分割
+        let mock_layout = ViewNode {
+            node: Some(Node::Parent(Parent {
+                direction: 0, // HORIZONTAL
+                children: vec![
+                    ViewNode { 
+                        node: Some(Node::Leaf(Leaf { 
+                            id: "left-view".into(), 
+                            buffer_id: Some("buffer-1".into()) 
+                        })) 
+                    },
+                    ViewNode { 
+                        node: Some(Node::Leaf(Leaf { 
+                            id: "right-view".into(), 
+                            buffer_id: Some("buffer-2".into()) 
+                        })) 
+                    },
+                ],
+                sizes: vec![], 
+            })),
+        };
+
         (
             EditorApp {
                 logs,
                 test_mode: args.test_mode,
+                layout: Some(mock_layout),
             },
             command
         )
@@ -105,20 +132,23 @@ impl Application for EditorApp {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let content = column(
-            self.logs.iter().map(|l| text(l).into()).collect::<Vec<_>>()
-        ).spacing(5);
+        let content = if let Some(layout) = &self.layout {
+            view_tree::render_view_tree(layout)
+        } else {
+            column(
+                self.logs.iter().map(|l| text(l).into()).collect::<Vec<_>>()
+            ).spacing(5).into()
+        };
 
-        container(scrollable(content))
+        container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(20)
+            .padding(5)
             .into()
     }
 }
 
 async fn connect_to_agent_and_handshake(port: u16, token: String) -> Result<Vec<String>, String> {
-    // 接続待ち（AgentがgRPCサーバーを起動する猶予）
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     
     let uri = format!("http://[::1]:{}", port);
